@@ -1,0 +1,115 @@
+Virtual Dog Bot User Guide
+
+Welcome to the Virtual Dog Bot! Here’s how you can interact with your virtual dogs and make the most of your experience:
+Getting Started
+
+    Adopt a Dog:
+        To start, everyone adopts a Chihuahua for free.
+        Use the command: !adopt [dog_name]
+        Example: !adopt Bella
+
+    Check Your Dog's Status:
+        See your dog's current breed and XP.
+        Use the command: !dogstatus
+        Example: !dogstatus
+
+    Earn Bones:
+        You earn bones by watching the stream. You receive 1 bone for every 5 minutes of watching.
+        Bones are used to interact with your dog, teach it new tricks, and buy accessories.
+
+Interacting with Your Dog
+
+    Feed Treats:
+        Feed your dog treats to increase its XP.
+        Use the command: !treats
+        Cost: 8 bones
+        XP Gain: 10 XP
+        Example: !treats
+
+    Pet Your Dog:
+        Pet your dog to increase its XP.
+        Use the command: !pet
+        Cost: 4 bones
+        XP Gain: 5 XP
+        Example: !pet
+
+    Go for a Walk:
+        Take your dog for a walk to increase its XP.
+        Use the command: !walk
+        Cost: 16 bones
+        XP Gain: 20 XP
+        Example: !walk
+
+    Play with Your Dog:
+        Play with your dog to increase its XP.
+        Use the command: !play
+        Cost: 12 bones
+        XP Gain: 15 XP
+        Example: !play
+
+Teaching Tricks
+
+    Teach a New Trick:
+        Teach your dog a new trick to gain XP.
+        Tricks are randomly selected and purchased.
+        Use the command: !trick
+        Cost: Varies by trick (10-25 bones)
+        XP Gain: Varies by trick (5-12 XP)
+        Example: !trick
+
+    List Available Tricks:
+        See which tricks your dog can still learn.
+        Use the command: !tricks
+        Example: !tricks
+
+Buying Accessories
+
+    List Available Accessories:
+        See which accessories you can buy for your dog.
+        Use the command: !accessories
+        Example: !accessories
+
+    Buy an Accessory:
+        Buy an accessory for your dog to gain XP.
+        Use the command: !buyaccessory [accessory_name]
+        Example: !buyaccessory Collar
+
+Dog Evolution
+
+    Evolution:
+        Your dog evolves as it gains XP. Each breed has an XP threshold it must reach to evolve into the next breed.
+        Example Evolution Path: Chihuahua -> Pomeranian -> Yorkie -> ShihTzu -> Schnauzer -> Beagle -> Pug -> Bulldog -> Frenchie -> Bichon -> Boston -> Cocker Spaniel -> Sheltie -> Border Collie -> Australian Shepherd -> Samoyed -> Corgi -> Dalmatian -> Boxer -> Pointer -> Vizsla -> Weimaraner -> Husky -> Alaskan Malamute -> Labrador Retriever -> Golden Retriever -> German Shepherd -> Rottweiler -> Doberman -> Akita -> Greyhound -> Great Dane -> Bernese Mountain Dog -> Saint Bernard -> Mastiff -> Newfoundland -> Great Pyrenees -> Tibetan Mastiff -> Leonberger -> Irish Wolfhound -> Borzoi -> Scottish Deerhound -> Bloodhound -> Bullmastiff -> Cane Corso -> Neapolitan Mastiff -> Anatolian Shepherd -> Boerboel -> Kuvasz -> Kangal
+
+Daily Challenges and Stories
+
+    Daily Challenge:
+        You receive a daily challenge every 24 hours.
+        Complete it to earn extra bones and XP.
+        Example of a challenge: "Pet your dog 5 times today."
+
+    Daily Story:
+        When you first chat within 12 hours, you'll hear a story about what your dog did while you were away.
+        Example: "Your dog found a hidden treasure."
+
+Bones
+
+    Check Your Bones:
+        See how many bones you have.
+        Use the command: !bones
+        Example: !bones
+
+Commands Overview
+
+    Adopt a Dog: !adopt [dog_name]
+    Check Dog Status: !dogstatus
+    Check Bones: !bones
+    Feed Treats: !treats
+    Pet Your Dog: !pet
+    Go for a Walk: !walk
+    Play with Your Dog: !play
+    Teach a New Trick: !trick
+    List Available Tricks: !tricks
+    List Available Accessories: !accessories
+    Buy an Accessory: !buyaccessory [accessory_name]
+
+Enjoy your time with your virtual dog, and make sure to take good care of it! If you have any questions or need help, feel free to ask in the chat.
