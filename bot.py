@@ -61,7 +61,7 @@ origin_stories = [
     "Your dog was found playing with other dogs in the mountains and decided to join your family."
 ]
 
-        def init_db(self):
+            def init_db(self):
         # Initialize the database and create tables if they do not exist
         self.db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS dogs (
