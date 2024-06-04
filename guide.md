@@ -1,74 +1,139 @@
-## Virtual Dog Bot Guide
 
-Welcome to the Virtual Dog Bot! Here's how you can interact with your virtual dog:
+# Twitch Dog Bot User Guide
+
+Welcome to the Twitch Dog Bot! This guide will help you understand how to interact with your virtual dog on Twitch. Follow the instructions below to get started and learn about all the fun commands you can use.
+
+## Getting Started
 
 ### Adopting a Dog
-- To start, adopt a Chihuahua for free using the command: `!adopt [dog_name]`.
-- Example: `!adopt Bella`
-- When you adopt a dog, you will receive a backstory for your dog.
 
-### Checking Dog Status
-- Check your dog's status using: `!dogstatus`.
-- This will show:
-  - Your dog's name and breed.
-  - The dog's backstory.
-  - Current XP and XP needed for the next evolution.
-  - Known tricks.
-  - Owned accessories.
+To adopt your first dog, use the `!adopt` command. This command is free and will give you a randomly generated dog with a unique origin story.
 
-### Earning Bones
-- You earn bones by watching the stream.
-- Check your bones balance with: `!bones`.
+```
+!adopt
+```
 
-### Interacting with Your Dog
-- Increase your dog's XP by interacting with it using the following commands:
-  - `!treats` - Spend 8 bones to gain 10 XP.
-  - `!pet` - Spend 4 bones to gain 5 XP.
-  - `!walk` - Spend 16 bones to gain 20 XP.
-  - `!play` - Spend 12 bones to gain 15 XP.
+### Naming Your Dog
 
-### Teaching Tricks
-- Teach your dog new tricks with: `!learntrick`.
-  - This will randomly teach your dog a new trick if it doesn't already know all available tricks.
-  - The cost and XP reward for the new trick will be displayed.
-- Perform known tricks with: `!trick [trick_name]`.
-  - Example: `!trick sit`
-- View available tricks to learn with: `!tricks`.
-  - This will show tricks your dog can still learn along with their costs.
+You can name or rename your dog using the `!name` command followed by the new name you want to give your dog.
 
-### Buying Accessories
-- View available accessories to buy with: `!accessories`.
-  - This will show accessories your dog can still buy along with their costs.
-- Buy an accessory for your dog with: `!buyaccessory [accessory_name]`.
-  - Example: `!buyaccessory leash`
+```
+!name <new_name>
+```
+Example:
+```
+!name Buddy
+```
 
-### Evolution
-- Your dog will evolve as it gains XP.
-  - Each breed has an XP threshold. Once your dog reaches that threshold, it will evolve to the next breed.
-- When your dog evolves, you will receive a chat notification.
+### Checking Your Dog's Status
 
-### Daily Challenges
-- Receive a daily challenge when you first chat within 12 hours.
-  - Example: `Pet your dog 5 times today. Reward: 10 bones, 5 XP.`
-- Complete the challenge to earn additional bones and XP.
-- Challenges are automatically tracked, and rewards are given upon completion.
+To check your dog's status, including their name, breed, level, XP, and origin story, use the `!status` command.
+
+```
+!status
+```
+
+### Getting a New Origin Story
+
+If you want a new origin story for your dog, use the `!newstory` command to generate a new one.
+
+```
+!newstory
+```
+
+## Interacting with Your Dog
+
+### Basic Interactions
+
+You can interact with your dog using the following commands. Each interaction costs bones (the in-chat currency) and rewards XP. The cost and XP gained vary depending on the interaction.
+
+- `!pet`
+- `!walk`
+- `!treat`
+- `!snuggle`
+- `!play`
+
+Example:
+```
+!pet
+```
+
+### Playing Fetch
+
+You can play fetch with your dog using the `!fetch` command. This command has a chance to reward both XP and bones.
+
+```
+!fetch
+```
+
+## Leveling Up
+
+As your dog earns XP, they will level up and evolve into different breeds. The bot will notify you when your dog levels up and evolves.
+
+## Teaching Tricks
+
+### Training New Tricks
+
+Teach your dog new tricks using the `!train` command. If your dog already knows all the tricks, the bot will inform you.
+
+```
+!train
+```
+
+### Performing Tricks
+
+Have your dog perform a random trick using the `!trick` command. Successfully performing a trick will reward your dog with XP.
+
+```
+!trick
+```
+
+## Daily Login Bonus
+
+You will receive a daily bonus of bones for logging in and chatting each day. The amount increases with consecutive daily logins, up to a maximum of 30 days. The bot will notify you of your daily bonus and streak.
+
+## Special Events
 
 ### Random Events
-- When you first chat after 12 hours, you will receive a story about what your dog did while you were away.
-  - Example: `Your dog found a hidden treasure while exploring the backyard.`
 
-### Commands Overview
-- `!adopt [dog_name]` - Adopt a new dog.
-- `!dogstatus` - Check your dog's status.
-- `!bones` - Check your bones balance.
-- `!treats` - Give treats to your dog.
-- `!pet` - Pet your dog.
-- `!walk` - Walk your dog.
-- `!play` - Play with your dog.
-- `!learntrick` - Teach your dog a new trick.
-- `!trick [trick_name]` - Perform a known trick.
-- `!tricks` - View available tricks to learn.
-- `!accessories` - View available accessories to buy.
-- `!buyaccessory [accessory_name]` - Buy an accessory for your dog.
+Every 15-20 minutes, random events may occur where your dog interacts with other users' dogs. These events reward both dogs with XP.
 
-Enjoy taking care of your virtual dog!
+### Dog Park Party
+
+Join a group event at the dog park using the `!party` command. These events happen occasionally and reward all participating dogs with XP.
+
+```
+!party
+```
+
+## Leaderboard
+
+Check the top 10 dogs by level and XP using the `!leaderboard` command. The leaderboard shows the dog's name, owner's username, level, and XP.
+
+```
+!leaderboard
+```
+
+## Help Command
+
+For a quick link to this guide, use the `!help` command.
+
+```
+!help
+```
+
+## Moderation
+
+### Blacklisting Users
+
+Moderators can use the `!nodog` command to remove a user's dog and blacklist the user from adopting another dog.
+
+```
+!nodog @<username>
+```
+Example:
+```
+!nodog @troublesomeuser
+```
+
+Thank you for using the Twitch Dog Bot! Have fun interacting with your virtual dogs and watching them grow and evolve.
