@@ -405,6 +405,8 @@ class Bot(commands.Bot):
         last_interaction = self.db_cursor.fetchone()
         if last_interaction:
             last_interaction = last_interaction[0]
+            if isinstance(last_interaction, str):
+                last_interaction = datetime.strptime(last_interaction, '%Y-%m-%d %H:%M:%S.%f')
             if datetime.now() - last_interaction > timedelta(hours=24):
                 daily_streak = self.update_daily_streak(user)
                 bones_reward = min(daily_streak, 30)
