@@ -1,4 +1,3 @@
-
 # Twitch Virtual Dog Bot
 
 ## Introduction
@@ -15,6 +14,7 @@ The Twitch Virtual Dog Bot is an interactive bot designed for Twitch streams. It
 - Random events that reward XP.
 - Leaderboard displaying the top 10 dogs.
 - Inactivity messages for users who have been away.
+- Earn bones for each minute spent watching the stream while it is live.
 
 ## Setup
 
@@ -90,6 +90,7 @@ The Twitch Virtual Dog Bot is an interactive bot designed for Twitch streams. It
 - `!snuggle`: Snuggle with your dog to earn XP.
 - `!play`: Play with your dog to earn XP.
 - `!fetch`: Play fetch with your dog to earn XP. Occasionally, your dog may find bones in addition to earning XP.
+- `!bones`: Check how many bones you have.
 
 #### Training and Tricks
 
@@ -98,7 +99,7 @@ The Twitch Virtual Dog Bot is an interactive bot designed for Twitch streams. It
 
 #### Events and Bonuses
 
-- `!daily`: Claim your daily login bonus. The bonus increases with consecutive daily logins and caps at 30 days.
+- `!party`: Participate in a group event where all dogs earn XP.
 
 #### Moderation Commands
 
