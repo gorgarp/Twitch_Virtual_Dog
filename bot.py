@@ -232,7 +232,7 @@ class Bot(commands.Bot):
                                (user, 0, 0, datetime.now(), datetime.now()))
         self.db_conn.commit()
 
-        await self.retry_send_message(f"{user} adopted a dog named {name}! {origin_story}")
+        await self.retry_send_message(f"{user} adopted a dog named {name}! {origin_story} Give them a name with !name.")
 
     @commands.command(name='name')
     async def name(self, ctx):
