@@ -232,7 +232,7 @@ class Bot(commands.Bot):
                                (user, 0, 0, datetime.now(), datetime.now()))
         self.db_conn.commit()
 
-        await self.retry_send_message(f"{user} adopted a dog named {name}! {origin_story} Give them a name with !name.")
+        await self.retry_send_message(f"{user} adopted a dog named {name}! {origin_story}")
 
     @commands.command(name='name')
     async def name(self, ctx):
@@ -358,7 +358,8 @@ class Bot(commands.Bot):
     @routines.routine(minutes=15)
     async def event_routine(self):
         # Routine to handle random events
-        await self.handle_events()
+        if self.online_status:
+            await self.handle_events()
 
     async def handle_events(self):
         # Function to handle random events between dogs
@@ -385,15 +386,6 @@ class Bot(commands.Bot):
         self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog1[0],))
         self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog2[0],))
         self.db_conn.commit()
-
-        # Handle party event
-        if random.random() < 0.05:  # Adjust probability as needed
-            attendees = ", ".join([f"{dog[1]} (Owner: {dog[0]})" for dog in dogs])
-            party_message = f"Party at the dog park! Attendees: {attendees}"
-            self.loop.create_task(self.retry_send_message(party_message))
-            for dog in dogs:
-                self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog[0],))
-            self.db_conn.commit()
 
     async def handle_inactivity_and_daily_bonus(self, user):
         # Function to handle daily bonuses and inactivity messages
