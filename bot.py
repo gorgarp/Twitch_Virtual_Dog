@@ -1,19 +1,20 @@
 import os
 import random
 import sqlite3
-from twitchio.ext import commands, routines
+from twitchio.ext import commands, routines, events
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import asyncio
 
 load_dotenv()
 
-# Load environment variables
+# Load environment variables from .env file
 IRC_TOKEN = os.getenv('IRC_TOKEN')
 CLIENT_ID = os.getenv('CLIENT_ID')
 BOT_NICK = os.getenv('BOT_NICK')
 CHANNEL = os.getenv('CHANNEL')
 
+# List of dog breeds for leveling up
 breeds = ["Chihuahua", "Pomeranian", "Yorkshire Terrier", "Maltese", "Dachshund", "Shih Tzu", "Toy Poodle",
           "Boston Terrier", "French Bulldog", "Miniature Pinscher", "Cavalier King Charles Spaniel", "Miniature Schnauzer",
           "Bichon Frise", "Shetland Sheepdog", "Beagle", "Cocker Spaniel", "Border Terrier", "West Highland White Terrier",
@@ -24,6 +25,7 @@ breeds = ["Chihuahua", "Pomeranian", "Yorkshire Terrier", "Maltese", "Dachshund"
           "Great Dane", "Irish Wolfhound", "Alaskan Malamute", "Leonberger", "Tibetan Mastiff", "Mastiff", "Great Pyrenees",
           "Scottish Deerhound"]
 
+# List of happy origin stories for dogs
 origin_stories = [
     "Your dog was rescued from a shelter and found a forever home with you.",
     "Your dog was a stray who wandered into your yard and decided to stay.",
@@ -57,8 +59,11 @@ class Bot(commands.Bot):
         self.db_cursor = self.db_conn.cursor()
         self.init_db()
         self.sent_messages = set()
+        self.online_status = True
+        self.watch_time = {}
 
     def init_db(self):
+        # Initialize the database and create tables if they do not exist
         self.db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS dogs (
             id INTEGER PRIMARY KEY,
@@ -123,10 +128,14 @@ class Bot(commands.Bot):
         self.db_conn.commit()
 
     async def event_ready(self):
+        # Event triggered when the bot is connected and ready
         print(f'Logged in as | {self.nick}')
         self.event_routine.start()
+        self.bones_routine.start()
+        self.online_check.start()
 
     async def event_message(self, message):
+        # Event triggered on every message received
         if not message.author:
             return
         if message.author.name.lower() == self.nick.lower():
@@ -134,24 +143,66 @@ class Bot(commands.Bot):
 
         await self.handle_commands(message)
 
-        # Handle sent message confirmation
         if message.content in self.sent_messages:
             self.sent_messages.remove(message.content)
 
-        # Handle inactivity message and daily bonus
+        if self.online_status:
+            self.watch_time[message.author.name] = datetime.now()
         await self.handle_inactivity_and_daily_bonus(message.author.name)
+
+    async def event_usernotice_subscription(self, message):
+        # Handle new subscriptions
+        user = message.author.name
+        if self.online_status:
+            self.watch_time[user] = datetime.now()
+
+    async def event_usernotice_subgift(self, message):
+        # Handle gifted subscriptions
+        user = message.tags['msg-param-recipient-display-name']
+        if self.online_status:
+            self.watch_time[user] = datetime.now()
+
+    async def event_userjoin(self, user):
+        # Handle user joining the channel
+        if self.online_status:
+            self.watch_time[user.name] = datetime.now()
+
+    async def event_userpart(self, user):
+        # Handle user leaving the channel
+        if user.name in self.watch_time:
+            del self.watch_time[user.name]
+
+    @routines.routine(minutes=1)
+    async def bones_routine(self):
+        # Award bones to users every minute while the stream is live
+        if self.online_status:
+            for user in self.watch_time:
+                self.db_cursor.execute("SELECT bones FROM users WHERE username=?", (user,))
+                bones = self.db_cursor.fetchone()
+                if bones:
+                    new_bones = bones[0] + 5
+                    self.db_cursor.execute("UPDATE users SET bones=? WHERE username=?", (new_bones, user))
+                else:
+                    self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
+                                           (user, 5, 0, datetime.now().strftime('%Y-%m-%d'), datetime.now()))
+            self.db_conn.commit()
+
+    @routines.routine(minutes=5)
+    async def online_check(self):
+        # Check if the stream is online
+        stream = await self.fetch_streams(user_logins=[CHANNEL])
+        self.online_status = bool(stream)
 
     @commands.command(name='adopt')
     async def adopt(self, ctx):
+        # Command to adopt a new dog
         user = ctx.author.name
 
-        # Check if the user is blacklisted
         self.db_cursor.execute("SELECT * FROM blacklist WHERE username=?", (user,))
         if self.db_cursor.fetchone():
             await self.retry_send_message(f"{user}, you are blacklisted and cannot adopt a dog.")
             return
 
-        # Check if the user already has a dog
         self.db_cursor.execute("SELECT * FROM dogs WHERE user=?", (user,))
         if self.db_cursor.fetchone():
             await self.retry_send_message(f"{user}, you already have a dog!")
@@ -175,6 +226,7 @@ class Bot(commands.Bot):
 
     @commands.command(name='name')
     async def name(self, ctx):
+        # Command to rename the user's dog
         user = ctx.author.name
         new_name = ctx.message.content.split(' ', 1)[1]
         self.db_cursor.execute("UPDATE dogs SET name=? WHERE user=?", (new_name, user))
@@ -183,6 +235,7 @@ class Bot(commands.Bot):
 
     @commands.command(name='status')
     async def status(self, ctx):
+        # Command to check the status of the user's dog
         user = ctx.author.name
         self.db_cursor.execute("SELECT * FROM dogs WHERE user=?", (user,))
         dog = self.db_cursor.fetchone()
@@ -193,6 +246,7 @@ class Bot(commands.Bot):
 
     @commands.command(name='newstory')
     async def newstory(self, ctx):
+        # Command to generate a new origin story for the user's dog
         user = ctx.author.name
         origin_story = random.choice(origin_stories)
         self.db_cursor.execute("UPDATE dogs SET origin_story=? WHERE user=?", (origin_story, user))
@@ -201,29 +255,47 @@ class Bot(commands.Bot):
 
     @commands.command(name='pet')
     async def pet(self, ctx):
+        # Command to pet the user's dog and earn XP
         await self.interact(ctx, 'pet')
 
     @commands.command(name='walk')
     async def walk(self, ctx):
+        # Command to walk the user's dog and earn XP
         await self.interact(ctx, 'walk')
 
     @commands.command(name='treat')
     async def treat(self, ctx):
+        # Command to give the user's dog a treat and earn XP
         await self.interact(ctx, 'treat')
 
     @commands.command(name='snuggle')
     async def snuggle(self, ctx):
+        # Command to snuggle with the user's dog and earn XP
         await self.interact(ctx, 'snuggle')
 
     @commands.command(name='play')
     async def play(self, ctx):
+        # Command to play with the user's dog and earn XP
         await self.interact(ctx, 'play')
 
     @commands.command(name='fetch')
     async def fetch(self, ctx):
+        # Command to play fetch with the user's dog and earn XP and possibly bones
         await self.interact(ctx, 'fetch', is_fetch=True)
 
+    @commands.command(name='bones')
+    async def bones(self, ctx):
+        # Command to check the number of bones the user has
+        user = ctx.author.name
+        self.db_cursor.execute("SELECT bones FROM users WHERE username=?", (user,))
+        bones = self.db_cursor.fetchone()
+        if bones:
+            await self.retry_send_message(f"{user}, you have {bones[0]} bones.")
+        else:
+            await self.retry_send_message(f"{user}, you don't have any bones yet!")
+
     async def interact(self, ctx, interaction_type, is_fetch=False):
+        # Function to handle various interactions with the user's dog
         user = ctx.author.name
         self.db_cursor.execute("SELECT bones FROM users WHERE username=?", (user,))
         bones = self.db_cursor.fetchone()
@@ -255,17 +327,17 @@ class Bot(commands.Bot):
         if bones_gain > 0:
             await self.retry_send_message(f"{user}, you also found {bones_gain} bones!")
 
-        # Check for level up
         await self.check_level_up(user)
 
     async def check_level_up(self, user):
+        # Function to check if the user's dog has leveled up
         self.db_cursor.execute("SELECT level, xp, breed FROM dogs WHERE user=?", (user,))
         dog = self.db_cursor.fetchone()
         if dog:
             level = dog[0]
             xp = dog[1]
             current_breed = dog[2]
-            next_level_xp = (level ** 2) * 50  # Example exponential scale
+            next_level_xp = (level ** 2) * 50
             if xp >= next_level_xp:
                 new_level = level + 1
                 new_breed = breeds[new_level - 1] if new_level <= len(breeds) else breeds[-1]
@@ -275,9 +347,11 @@ class Bot(commands.Bot):
 
     @routines.routine(minutes=15)
     async def event_routine(self):
+        # Routine to handle random events
         await self.handle_events()
 
     async def handle_events(self):
+        # Function to handle random events between dogs
         self.db_cursor.execute("SELECT user, name FROM dogs")
         dogs = self.db_cursor.fetchall()
         if len(dogs) < 2:
@@ -298,12 +372,12 @@ class Bot(commands.Bot):
         ])
         self.loop.create_task(self.retry_send_message(event))
 
-        # Update XP for both dogs
         self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog1[0],))
         self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog2[0],))
         self.db_conn.commit()
 
     async def handle_inactivity_and_daily_bonus(self, user):
+        # Function to handle daily bonuses and inactivity messages
         activities = [
             "chased butterflies in the garden",
             "played with a new toy",
@@ -337,6 +411,7 @@ class Bot(commands.Bot):
             self.db_conn.commit()
 
     def update_daily_streak(self, user):
+        # Function to update the daily login streak for the user
         self.db_cursor.execute("SELECT daily_streak FROM users WHERE username=?", (user,))
         daily_streak = self.db_cursor.fetchone()[0]
         daily_streak += 1
@@ -346,6 +421,7 @@ class Bot(commands.Bot):
 
     @commands.command(name='trick')
     async def trick(self, ctx):
+        # Command to perform a random trick that the user's dog knows
         user = ctx.author.name
         self.db_cursor.execute("SELECT id FROM dogs WHERE user=?", (user,))
         dog = self.db_cursor.fetchone()
@@ -382,6 +458,7 @@ class Bot(commands.Bot):
 
     @commands.command(name='train')
     async def train(self, ctx):
+        # Command to teach the user's dog a new trick
         user = ctx.author.name
         self.db_cursor.execute("SELECT id FROM dogs WHERE user=?", (user,))
         dog = self.db_cursor.fetchone()
@@ -414,6 +491,7 @@ class Bot(commands.Bot):
 
     @commands.command(name='leaderboard')
     async def leaderboard(self, ctx):
+        # Command to display the top 10 dogs by level and XP
         self.db_cursor.execute("SELECT user, name, level, xp FROM dogs ORDER BY level DESC, xp DESC LIMIT 10")
         top_dogs = self.db_cursor.fetchall()
         if not top_dogs:
@@ -428,10 +506,12 @@ class Bot(commands.Bot):
 
     @commands.command(name='help')
     async def help_command(self, ctx):
+        # Command to provide a link to the bot's user guide
         await self.retry_send_message("For help and command details, visit: https://github.com/gorgarp/Twitch_Virtual_Dog/blob/main/guide.md")
 
     @commands.command(name='nodog')
     async def nodog(self, ctx):
+        # Command for moderators to blacklist a user
         if ctx.author.is_mod:
             user_to_ignore = ctx.message.content.split(' ')[1]
             self.db_cursor.execute("DELETE FROM dogs WHERE user=?", (user_to_ignore,))
@@ -443,6 +523,7 @@ class Bot(commands.Bot):
 
     @commands.command(name='party')
     async def party(self, ctx):
+        # Command to initiate a group event where all dogs earn XP
         self.db_cursor.execute("SELECT user, name FROM dogs")
         dogs = self.db_cursor.fetchall()
         if not dogs:
@@ -458,6 +539,7 @@ class Bot(commands.Bot):
         self.db_conn.commit()
 
     async def retry_send_message(self, message, retries=3, delay=2):
+        # Function to send a message with retries for confirmation
         channel = self.get_channel(CHANNEL)
         if channel:
             for attempt in range(retries):
@@ -465,9 +547,9 @@ class Bot(commands.Bot):
                     if message not in self.sent_messages:
                         await channel.send(message)
                         self.sent_messages.add(message)
-                    await asyncio.sleep(delay + 1)  # Sleep a little longer to wait for confirmation
+                    await asyncio.sleep(delay + 1)
                     if message not in self.sent_messages:
-                        break  # If the message was removed from sent_messages, it was confirmed
+                        break
                 except Exception as e:
                     if attempt < retries - 1:
                         await asyncio.sleep(delay)
