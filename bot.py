@@ -14,6 +14,16 @@ CLIENT_ID = os.getenv('CLIENT_ID')
 BOT_NICK = os.getenv('BOT_NICK')
 CHANNEL = os.getenv('CHANNEL')
 
+# Register adapters and converters for datetime
+def adapt_datetime(dt):
+    return dt.strftime('%Y-%m-%d %H:%M:%S.%f')
+
+def convert_datetime(dt_str):
+    return datetime.strptime(dt_str.decode('utf-8'), '%Y-%m-%d %H:%M:%S.%f')
+
+sqlite3.register_adapter(datetime, adapt_datetime)
+sqlite3.register_converter("DATETIME", convert_datetime)
+
 # List of dog breeds for leveling up
 breeds = ["Chihuahua", "Pomeranian", "Yorkshire Terrier", "Maltese", "Dachshund", "Shih Tzu", "Toy Poodle",
           "Boston Terrier", "French Bulldog", "Miniature Pinscher", "Cavalier King Charles Spaniel", "Miniature Schnauzer",
@@ -55,7 +65,7 @@ class Bot(commands.Bot):
 
     def __init__(self):
         super().__init__(token=IRC_TOKEN, prefix='!', initial_channels=[CHANNEL])
-        self.db_conn = sqlite3.connect('twitch_dog_bot.db')
+        self.db_conn = sqlite3.connect('twitch_dog_bot.db', detect_types=sqlite3.PARSE_DECLTYPES)
         self.db_cursor = self.db_conn.cursor()
         self.init_db()
         self.sent_messages = set()
@@ -93,8 +103,8 @@ class Bot(commands.Bot):
             username TEXT NOT NULL,
             bones INTEGER NOT NULL,
             daily_streak INTEGER NOT NULL,
-            last_login DATE,
-            last_interaction TIMESTAMP
+            last_login DATETIME,
+            last_interaction DATETIME
         )
         ''')
 
@@ -180,11 +190,11 @@ class Bot(commands.Bot):
                 self.db_cursor.execute("SELECT bones FROM users WHERE username=?", (user,))
                 bones = self.db_cursor.fetchone()
                 if bones:
-                    new_bones = bones[0] + 5
+                    new_bones = bones[0] + 1
                     self.db_cursor.execute("UPDATE users SET bones=? WHERE username=?", (new_bones, user))
                 else:
                     self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
-                                           (user, 5, 0, datetime.now().strftime('%Y-%m-%d'), datetime.now()))
+                                           (user, 1, 0, datetime.now(), datetime.now()))
             self.db_conn.commit()
 
     @routines.routine(minutes=5)
@@ -219,7 +229,7 @@ class Bot(commands.Bot):
         self.db_conn.commit()
 
         self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
-                               (user, 0, 0, datetime.now().strftime('%Y-%m-%d'), datetime.now()))
+                               (user, 0, 0, datetime.now(), datetime.now()))
         self.db_conn.commit()
 
         await self.retry_send_message(f"{user} adopted a dog named {name}! {origin_story}")
@@ -407,7 +417,7 @@ class Bot(commands.Bot):
                 await self.retry_send_message(f"{user}, your dog missed you! They {activity} while you were away.")
         else:
             self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
-                                   (user, 0, 0, datetime.now().strftime('%Y-%m-%d'), datetime.now()))
+                                   (user, 0, 0, datetime.now(), datetime.now()))
             self.db_conn.commit()
 
     def update_daily_streak(self, user):
