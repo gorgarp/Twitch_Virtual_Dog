@@ -388,40 +388,43 @@ class Bot(commands.Bot):
         self.db_conn.commit()
 
     async def handle_inactivity_and_daily_bonus(self, user):
-        # Function to handle daily bonuses and inactivity messages
-        activities = [
-            "chased butterflies in the garden",
-            "played with a new toy",
-            "took a long nap under a tree",
-            "dug a small hole in the yard",
-            "barked at the mailman",
-            "learned a new trick on its own",
-            "played fetch with a neighbor",
-            "explored a hidden corner of the house",
-            "watched squirrels from the window",
-            "had a little snack"
-        ]
-        
-        self.db_cursor.execute("SELECT last_interaction FROM users WHERE username=?", (user,))
-        last_interaction = self.db_cursor.fetchone()
-        if last_interaction:
-            last_interaction = last_interaction[0]
-            if isinstance(last_interaction, str):
-                last_interaction = datetime.strptime(last_interaction, '%Y-%m-%d %H:%M:%S.%f')
-            if datetime.now() - last_interaction > timedelta(hours=24):
-                daily_streak = self.update_daily_streak(user)
-                bones_reward = min(daily_streak, 30)
-                self.db_cursor.execute("UPDATE users SET last_interaction = ?, bones = bones + ? WHERE username=?", 
-                                       (datetime.now(), bones_reward, user))
-                self.db_conn.commit()
-                await self.retry_send_message(f"{user}, you received your daily bonus of {bones_reward} bones! Daily streak: {daily_streak} days.")
-            if datetime.now() - last_interaction > timedelta(hours=12):
-                activity = random.choice(activities)
-                await self.retry_send_message(f"{user}, your dog missed you! They {activity} while you were away.")
-        else:
-            self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
-                                   (user, 0, 0, datetime.now(), datetime.now()))
+    # Function to handle daily bonuses and inactivity messages
+    activities = [
+        "chased butterflies in the garden",
+        "played with a new toy",
+        "took a long nap under a tree",
+        "dug a small hole in the yard",
+        "barked at the mailman",
+        "learned a new trick on its own",
+        "played fetch with a neighbor",
+        "explored a hidden corner of the house",
+        "watched squirrels from the window",
+        "had a little snack"
+    ]
+    
+    self.db_cursor.execute("SELECT last_interaction FROM users WHERE username=?", (user,))
+    last_interaction = self.db_cursor.fetchone()
+    if last_interaction:
+        last_interaction = last_interaction[0]
+        if isinstance(last_interaction, str):
+            last_interaction = datetime.strptime(last_interaction, '%Y-%m-%d %H:%M:%S.%f')
+        if datetime.now() - last_interaction > timedelta(hours=24):
+            daily_streak = self.update_daily_streak(user)
+            bones_reward = min(daily_streak, 30)
+            self.db_cursor.execute("UPDATE users SET last_interaction = ?, bones = bones + ? WHERE username=?", 
+                                   (datetime.now(), bones_reward, user))
             self.db_conn.commit()
+            await self.retry_send_message(f"{user}, you received your daily bonus of {bones_reward} bones! Daily streak: {daily_streak} days.")
+        if datetime.now() - last_interaction > timedelta(hours=12):
+            activity = random.choice(activities)
+            await self.retry_send_message(f"{user}, your dog missed you! They {activity} while you were away.")
+            self.db_cursor.execute("UPDATE users SET last_interaction = ? WHERE username=?", (datetime.now(), user))
+            self.db_conn.commit()
+    else:
+        self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
+                               (user, 0, 0, datetime.now(), datetime.now()))
+        self.db_conn.commit()
+
 
     def update_daily_streak(self, user):
         # Function to update the daily login streak for the user
