@@ -183,19 +183,20 @@ class Bot(commands.Bot):
             del self.watch_time[user.name]
 
     @routines.routine(minutes=1)
-    async def bones_routine(self):
-        # Award bones to users every minute while the stream is live
-        if self.online_status:
-            for user in self.watch_time:
-                self.db_cursor.execute("SELECT bones FROM users WHERE username=?", (user,))
-                bones = self.db_cursor.fetchone()
-                if bones:
-                    new_bones = bones[0] + 5
-                    self.db_cursor.execute("UPDATE users SET bones=? WHERE username=?", (new_bones, user))
-                else:
-                    self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
-                                           (user, 5, 0, datetime.now(), datetime.now()))
-            self.db_conn.commit()
+async def bones_routine(self):
+    # Award bones to users every minute while the stream is live
+    if self.online_status:
+        for user in self.watch_time:
+            self.db_cursor.execute("SELECT bones FROM users WHERE username=?", (user,))
+            bones = self.db_cursor.fetchone()
+            if bones:
+                new_bones = bones[0] + 1
+                self.db_cursor.execute("UPDATE users SET bones=? WHERE username=?", (new_bones, user))
+            else:
+                self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
+                                       (user, 1, 0, datetime.now(), datetime.now()))
+        self.db_conn.commit()
+
 
     @routines.routine(minutes=5)
     async def online_check(self):
