@@ -33,6 +33,14 @@ To check your dog's status, including their name, breed, level, XP, and origin s
 !status
 ```
 
+## Checking Bones
+
+To check how many bones you have, use the `!bones` command.
+
+```
+!bones
+```
+
 ### Getting a New Origin Story
 
 If you want a new origin story for your dog, use the `!newstory` command to generate a new one.
