@@ -217,7 +217,7 @@ class Bot(commands.Bot):
         if self.db_cursor.fetchone():
             await self.retry_send_message(f"{user}, you already have a dog!")
             return
-
+            
         name = f"Dog{random.randint(1000, 9999)}"
         breed = breeds[0]
         level = 1
