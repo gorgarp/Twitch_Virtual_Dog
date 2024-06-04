@@ -61,7 +61,7 @@ origin_stories = [
     "Your dog was found playing with other dogs in the mountains and decided to join your family."
 ]
 
-    def init_db(self):
+        def init_db(self):
         # Initialize the database and create tables if they do not exist
         self.db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS dogs (
@@ -126,46 +126,6 @@ origin_stories = [
 
         self.db_conn.commit()
 
-
-        self.db_cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            username TEXT NOT NULL,
-            bones INTEGER NOT NULL,
-            daily_streak INTEGER NOT NULL,
-            last_login DATETIME,
-            last_interaction DATETIME
-        )
-        ''')
-
-        self.db_cursor.execute('''
-        CREATE TABLE IF NOT EXISTS friendships (
-            id INTEGER PRIMARY KEY,
-            dog1_id INTEGER,
-            dog2_id INTEGER,
-            interactions INTEGER NOT NULL,
-            FOREIGN KEY(dog1_id) REFERENCES dogs(id),
-            FOREIGN KEY(dog2_id) REFERENCES dogs(id)
-        )
-        ''')
-
-        self.db_cursor.execute(''''
-        CREATE TABLE IF NOT EXISTS events (
-            id INTEGER PRIMARY KEY,
-            event_type TEXT NOT NULL,
-            description TEXT NOT NULL,
-            frequency INTEGER NOT NULL
-        )
-        ''')
-
-        self.db_cursor.execute(''''
-        CREATE TABLE IF NOT EXISTS blacklist (
-            id INTEGER PRIMARY KEY,
-            username TEXT NOT NULL
-        )
-        ''')
-
-        self.db_conn.commit()
 
     async def event_ready(self):
         # Event triggered when the bot is connected and ready
