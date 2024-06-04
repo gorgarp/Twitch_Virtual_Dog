@@ -217,7 +217,7 @@ class Bot(commands.Bot):
         if self.db_cursor.fetchone():
             await self.retry_send_message(f"{user}, you already have a dog!")
             return
-            
+
         name = f"Dog{random.randint(1000, 9999)}"
         breed = breeds[0]
         level = 1
@@ -386,6 +386,15 @@ class Bot(commands.Bot):
         self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog2[0],))
         self.db_conn.commit()
 
+        # Handle party event
+        if random.random() < 0.05:  # Adjust probability as needed
+            attendees = ", ".join([f"{dog[1]} (Owner: {dog[0]})" for dog in dogs])
+            party_message = f"Party at the dog park! Attendees: {attendees}"
+            self.loop.create_task(self.retry_send_message(party_message))
+            for dog in dogs:
+                self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog[0],))
+            self.db_conn.commit()
+
     async def handle_inactivity_and_daily_bonus(self, user):
         # Function to handle daily bonuses and inactivity messages
         activities = [
@@ -405,6 +414,8 @@ class Bot(commands.Bot):
         last_interaction = self.db_cursor.fetchone()
         if last_interaction:
             last_interaction = last_interaction[0]
+            if isinstance(last_interaction, str):
+                last_interaction = datetime.strptime(last_interaction, '%Y-%m-%d %H:%M:%S.%f')
             if datetime.now() - last_interaction > timedelta(hours=24):
                 daily_streak = self.update_daily_streak(user)
                 bones_reward = min(daily_streak, 30)
@@ -530,23 +541,6 @@ class Bot(commands.Bot):
             await self.retry_send_message(f"{user_to_ignore} has been removed from the dog database and blacklisted.")
         else:
             await self.retry_send_message(f"{ctx.author.name}, you do not have permission to use this command.")
-
-    @commands.command(name='party')
-    async def party(self, ctx):
-        # Command to initiate a group event where all dogs earn XP
-        self.db_cursor.execute("SELECT user, name FROM dogs")
-        dogs = self.db_cursor.fetchall()
-        if not dogs:
-            await self.retry_send_message("No dogs found for the party.")
-            return
-
-        attendees = ", ".join([f"{dog[1]} (Owner: {dog[0]})" for dog in dogs])
-        await self.retry_send_message(f"Party at the dog park! Attendees: {attendees}")
-
-        for dog in dogs:
-            self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog[0],))
-        
-        self.db_conn.commit()
 
     async def retry_send_message(self, message, retries=3, delay=2):
         # Function to send a message with retries for confirmation
