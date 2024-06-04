@@ -182,7 +182,7 @@ class Bot(commands.Bot):
         if user.name in self.watch_time:
             del self.watch_time[user.name]
 
-    @routines.routine(minutes=1)
+@routines.routine(minutes=1)
 async def bones_routine(self):
     # Award bones to users every minute while the stream is live
     if self.online_status:
