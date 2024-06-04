@@ -1,7 +1,7 @@
 import os
 import random
 import sqlite3
-from twitchio.ext import commands, routines, events
+from twitchio.ext import commands, routines
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import asyncio
