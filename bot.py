@@ -61,7 +61,18 @@ origin_stories = [
     "Your dog was found playing with other dogs in the mountains and decided to join your family."
 ]
 
-            def init_db(self):
+class Bot(commands.Bot):
+
+    def __init__(self):
+        super().__init__(token=IRC_TOKEN, prefix='!', initial_channels=[CHANNEL])
+        self.db_conn = sqlite3.connect('twitch_dog_bot.db', detect_types=sqlite3.PARSE_DECLTYPES)
+        self.db_cursor = self.db_conn.cursor()
+        self.init_db()
+        self.sent_messages = set()
+        self.online_status = True
+        self.watch_time = {}
+
+    def init_db(self):
         # Initialize the database and create tables if they do not exist
         self.db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS dogs (
@@ -125,7 +136,6 @@ origin_stories = [
         ''')
 
         self.db_conn.commit()
-
 
     async def event_ready(self):
         # Event triggered when the bot is connected and ready
