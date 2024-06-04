@@ -106,14 +106,6 @@ You will receive a daily bonus of bones for logging in and chatting each day. Th
 
 Every 15-20 minutes, random events may occur where your dog interacts with other users' dogs. These events reward both dogs with XP.
 
-### Dog Park Party
-
-Join a group event at the dog park using the `!party` command. These events happen occasionally and reward all participating dogs with XP.
-
-```
-!party
-```
-
 ## Leaderboard
 
 Check the top 10 dogs by level and XP using the `!leaderboard` command. The leaderboard shows the dog's name, owner's username, level, and XP.
