@@ -61,17 +61,6 @@ origin_stories = [
     "Your dog was found playing with other dogs in the mountains and decided to join your family."
 ]
 
-class Bot(commands.Bot):
-
-    def __init__(self):
-        super().__init__(token=IRC_TOKEN, prefix='!', initial_channels=[CHANNEL])
-        self.db_conn = sqlite3.connect('twitch_dog_bot.db', detect_types=sqlite3.PARSE_DECLTYPES)
-        self.db_cursor = self.db_conn.cursor()
-        self.init_db()
-        self.sent_messages = set()
-        self.online_status = True
-        self.watch_time = {}
-
     def init_db(self):
         # Initialize the database and create tables if they do not exist
         self.db_cursor.execute('''
@@ -86,7 +75,7 @@ class Bot(commands.Bot):
         )
         ''')
 
-        self.db_cursor.execute(''''
+        self.db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS tricks (
             id INTEGER PRIMARY KEY,
             dog_id INTEGER,
@@ -96,6 +85,47 @@ class Bot(commands.Bot):
             FOREIGN KEY(dog_id) REFERENCES dogs(id)
         )
         ''')
+
+        self.db_cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            username TEXT NOT NULL,
+            bones INTEGER NOT NULL,
+            daily_streak INTEGER NOT NULL,
+            last_login DATETIME,
+            last_interaction DATETIME
+        )
+        ''')
+
+        self.db_cursor.execute('''
+        CREATE TABLE IF NOT EXISTS friendships (
+            id INTEGER PRIMARY KEY,
+            dog1_id INTEGER,
+            dog2_id INTEGER,
+            interactions INTEGER NOT NULL,
+            FOREIGN KEY(dog1_id) REFERENCES dogs(id),
+            FOREIGN KEY(dog2_id) REFERENCES dogs(id)
+        )
+        ''')
+
+        self.db_cursor.execute('''
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY,
+            event_type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            frequency INTEGER NOT NULL
+        )
+        ''')
+
+        self.db_cursor.execute('''
+        CREATE TABLE IF NOT EXISTS blacklist (
+            id INTEGER PRIMARY KEY,
+            username TEXT NOT NULL
+        )
+        ''')
+
+        self.db_conn.commit()
+
 
         self.db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
