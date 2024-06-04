@@ -190,11 +190,11 @@ class Bot(commands.Bot):
                 self.db_cursor.execute("SELECT bones FROM users WHERE username=?", (user,))
                 bones = self.db_cursor.fetchone()
                 if bones:
-                    new_bones = bones[0] + 1
+                    new_bones = bones[0] + 5
                     self.db_cursor.execute("UPDATE users SET bones=? WHERE username=?", (new_bones, user))
                 else:
                     self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
-                                           (user, 1, 0, datetime.now(), datetime.now()))
+                                           (user, 5, 0, datetime.now(), datetime.now()))
             self.db_conn.commit()
 
     @routines.routine(minutes=5)
@@ -404,7 +404,7 @@ class Bot(commands.Bot):
         self.db_cursor.execute("SELECT last_interaction FROM users WHERE username=?", (user,))
         last_interaction = self.db_cursor.fetchone()
         if last_interaction:
-            last_interaction = datetime.strptime(last_interaction[0], '%Y-%m-%d %H:%M:%S.%f')
+            last_interaction = last_interaction[0]
             if datetime.now() - last_interaction > timedelta(hours=24):
                 daily_streak = self.update_daily_streak(user)
                 bones_reward = min(daily_streak, 30)
