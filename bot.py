@@ -69,7 +69,7 @@ class Bot(commands.Bot):
         self.db_cursor = self.db_conn.cursor()
         self.init_db()
         self.sent_messages = set()
-        self.online_status = False
+        self.online_status = False  # Changed to False initially
         self.watch_time = {}
 
     def init_db(self):
@@ -416,9 +416,9 @@ class Bot(commands.Bot):
                 self.db_conn.commit()
                 await self.retry_send_message(f"{user}, you received your daily bonus of {bones_reward} bones! Daily streak: {daily_streak} days.")
             if datetime.now() - last_interaction > timedelta(hours=12):
-                self.db_cursor.execute("SELECT id FROM dogs WHERE user=?", (user,))
-                dog_exists = self.db_cursor.fetchone() is not None
-                if dog_exists:
+                self.db_cursor.execute("SELECT * FROM dogs WHERE user=?", (user,))
+                dog = self.db_cursor.fetchone()
+                if dog:
                     activity = random.choice(activities)
                     await self.retry_send_message(f"{user}, your dog missed you! They {activity} while you were away.")
                 self.db_cursor.execute("UPDATE users SET last_interaction = ? WHERE username=?", (datetime.now(), user))
