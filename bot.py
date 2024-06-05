@@ -69,7 +69,7 @@ class Bot(commands.Bot):
         self.db_cursor = self.db_conn.cursor()
         self.init_db()
         self.sent_messages = set()
-        self.online_status = True
+        self.online_status = False
         self.watch_time = {}
 
     def init_db(self):
@@ -381,7 +381,7 @@ class Bot(commands.Bot):
             f"{dog1[0]}, your dog {dog1[1]} and {dog2[0]}'s dog {dog2[1]} chased butterflies together +XP for both of you!",
             f"{dog1[0]}, your dog {dog1[1]} and {dog2[0]}'s dog {dog2[1]} went on an adventure through the park +XP for both of you!"
         ])
-        await self.retry_send_message(event)
+        self.loop.create_task(self.retry_send_message(event))
 
         self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog1[0],))
         self.db_cursor.execute("UPDATE dogs SET xp = xp + 10 WHERE user=?", (dog2[0],))
@@ -421,8 +421,8 @@ class Bot(commands.Bot):
                 if dog:
                     activity = random.choice(activities)
                     await self.retry_send_message(f"{user}, your dog missed you! They {activity} while you were away.")
-                    self.db_cursor.execute("UPDATE users SET last_interaction = ? WHERE username=?", (datetime.now(), user))
-                    self.db_conn.commit()
+                self.db_cursor.execute("UPDATE users SET last_interaction = ? WHERE username=?", (datetime.now(), user))
+                self.db_conn.commit()
         else:
             self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
                                    (user, 0, 0, datetime.now(), datetime.now()))
@@ -507,8 +507,8 @@ class Bot(commands.Bot):
         self.db_conn.commit()
         await self.retry_send_message(f"{user}, your dog learned a new trick: {new_trick[0]}!")
 
-    @commands.command(name='leaderboard')
-    async def leaderboard(self, ctx):
+    @commands.command(name='leader')
+    async def leader(self, ctx):
         # Command to display the top 10 dogs by level and XP
         self.db_cursor.execute("SELECT user, name, level, xp FROM dogs ORDER BY level DESC, xp DESC LIMIT 10")
         top_dogs = self.db_cursor.fetchall()
