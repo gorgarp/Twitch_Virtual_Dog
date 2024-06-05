@@ -69,7 +69,7 @@ class Bot(commands.Bot):
         self.db_cursor = self.db_conn.cursor()
         self.init_db()
         self.sent_messages = set()
-        self.online_status = False  # Changed to False initially
+        self.online_status = False
         self.watch_time = {}
 
     def init_db(self):
@@ -416,10 +416,9 @@ class Bot(commands.Bot):
                 self.db_conn.commit()
                 await self.retry_send_message(f"{user}, you received your daily bonus of {bones_reward} bones! Daily streak: {daily_streak} days.")
             if datetime.now() - last_interaction > timedelta(hours=12):
+                activity = random.choice(activities)
                 self.db_cursor.execute("SELECT * FROM dogs WHERE user=?", (user,))
-                dog = self.db_cursor.fetchone()
-                if dog:
-                    activity = random.choice(activities)
+                if self.db_cursor.fetchone():
                     await self.retry_send_message(f"{user}, your dog missed you! They {activity} while you were away.")
                 self.db_cursor.execute("UPDATE users SET last_interaction = ? WHERE username=?", (datetime.now(), user))
                 self.db_conn.commit()
@@ -508,19 +507,17 @@ class Bot(commands.Bot):
         await self.retry_send_message(f"{user}, your dog learned a new trick: {new_trick[0]}!")
 
     @commands.command(name='leader')
-    async def leaderboard(self, ctx):
-        # Command to display the top 10 dogs by level and XP
-        self.db_cursor.execute("SELECT user, name, level, xp FROM dogs ORDER BY level DESC, xp DESC LIMIT 10")
+    async def leader(self, ctx):
+        # Command to display the top 5 dogs by level and XP
+        self.db_cursor.execute("SELECT user, name, level, xp FROM dogs ORDER BY level DESC, xp DESC LIMIT 5")
         top_dogs = self.db_cursor.fetchall()
         if not top_dogs:
             await self.retry_send_message("No dogs found on the leaderboard.")
             return
 
-        leaderboard_msg = "Top 10 Dogs:\n"
         for idx, dog in enumerate(top_dogs, start=1):
-            leaderboard_msg += f"{idx}. {dog[1]} (Owner: {dog[0]}, Level: {dog[2]}, XP: {dog[3]})\n"
-        
-        await self.retry_send_message(leaderboard_msg)
+            leaderboard_msg = f"{idx}. {dog[1]} (Owner: {dog[0]}, Level: {dog[2]}, XP: {dog[3]})"
+            await self.retry_send_message(leaderboard_msg)
 
     @commands.command(name='help')
     async def help_command(self, ctx):
