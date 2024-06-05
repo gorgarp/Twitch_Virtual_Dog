@@ -416,9 +416,9 @@ class Bot(commands.Bot):
                 self.db_conn.commit()
                 await self.retry_send_message(f"{user}, you received your daily bonus of {bones_reward} bones! Daily streak: {daily_streak} days.")
             if datetime.now() - last_interaction > timedelta(hours=12):
-                self.db_cursor.execute("SELECT * FROM dogs WHERE user=?", (user,))
-                dog = self.db_cursor.fetchone()
-                if dog:
+                self.db_cursor.execute("SELECT id FROM dogs WHERE user=?", (user,))
+                dog_exists = self.db_cursor.fetchone() is not None
+                if dog_exists:
                     activity = random.choice(activities)
                     await self.retry_send_message(f"{user}, your dog missed you! They {activity} while you were away.")
                 self.db_cursor.execute("UPDATE users SET last_interaction = ? WHERE username=?", (datetime.now(), user))
@@ -508,7 +508,7 @@ class Bot(commands.Bot):
         await self.retry_send_message(f"{user}, your dog learned a new trick: {new_trick[0]}!")
 
     @commands.command(name='leader')
-    async def leader(self, ctx):
+    async def leaderboard(self, ctx):
         # Command to display the top 10 dogs by level and XP
         self.db_cursor.execute("SELECT user, name, level, xp FROM dogs ORDER BY level DESC, xp DESC LIMIT 10")
         top_dogs = self.db_cursor.fetchall()
