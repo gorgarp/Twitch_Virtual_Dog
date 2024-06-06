@@ -108,10 +108,10 @@ Every 15-20 minutes, random events may occur where your dog interacts with other
 
 ## Leaderboard
 
-Check the top 10 dogs by level and XP using the `!leaderboard` command. The leaderboard shows the dog's name, owner's username, level, and XP.
+Check the top 10 dogs by level and XP using the `!leader` command. The leaderboard shows the dog's name, owner's username, level, and XP.
 
 ```
-!leaderboard
+!leader
 ```
 
 ## Help Command
