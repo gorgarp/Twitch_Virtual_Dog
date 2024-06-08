@@ -58,7 +58,10 @@ origin_stories = [
     "Your dog was part of a happy traveling carnival before finding a permanent home with you.",
     "Your dog was the mascot of a friendly local fire department.",
     "Your dog was born in a snowy region and loves cold weather.",
-    "Your dog was found playing with other dogs in the mountains and decided to join your family."
+    "Your dog was found playing with other dogs in the mountains and decided to join your family.",
+    "Your dog was a movie star in a heartwarming family film before joining your family.",
+    "Your dog was the beloved companion of a kind old man who lived in a charming cottage in the woods.",
+    "Your dog was found as a puppy in a basket on your doorstep with a heartfelt note.",
 ]
 
 class Bot(commands.Bot):
@@ -71,6 +74,8 @@ class Bot(commands.Bot):
         self.sent_messages = set()
         self.online_status = False
         self.watch_time = {}
+        self.last_interaction_check = {}
+        self.last_message_cleanup = datetime.now()
 
     def init_db(self):
         # Initialize the database and create tables if they do not exist
@@ -158,7 +163,14 @@ class Bot(commands.Bot):
 
         if self.online_status:
             self.watch_time[message.author.name] = datetime.now()
-        await self.handle_inactivity_and_daily_bonus(message.author.name)
+        if message.author.name not in self.last_interaction_check or \
+                (datetime.now() - self.last_interaction_check[message.author.name]).total_seconds() >= 3600:
+            await self.handle_inactivity_and_daily_bonus(message.author.name)
+            self.last_interaction_check[message.author.name] = datetime.now()
+
+        if (datetime.now() - self.last_message_cleanup).total_seconds() >= 3600:
+            self.cleanup_sent_messages()
+            self.last_message_cleanup = datetime.now()
 
     async def event_usernotice_subscription(self, message):
         # Handle new subscriptions
@@ -184,9 +196,10 @@ class Bot(commands.Bot):
 
     @routines.routine(minutes=1)
     async def bones_routine(self):
-        # Award bones to users every minute while the stream is live
         if self.online_status:
-            for user in self.watch_time:
+            for user in list(self.watch_time):
+                if user not in self.watch_time:
+                    continue
                 self.db_cursor.execute("SELECT bones FROM users WHERE username=?", (user,))
                 bones = self.db_cursor.fetchone()
                 if bones:
@@ -302,6 +315,9 @@ class Bot(commands.Bot):
         if bones:
             await self.retry_send_message(f"{user}, you have {bones[0]} bones.")
         else:
+            self.db_cursor.execute("INSERT INTO users (username, bones, daily_streak, last_login, last_interaction) VALUES (?, ?, ?, ?, ?)",
+                                   (user, 0, 0, datetime.now(), datetime.now()))
+            self.db_conn.commit()
             await self.retry_send_message(f"{user}, you don't have any bones yet!")
 
     async def interact(self, ctx, interaction_type, is_fetch=False):
@@ -347,7 +363,7 @@ class Bot(commands.Bot):
             level = dog[0]
             xp = dog[1]
             current_breed = dog[2]
-            next_level_xp = (level ** 2) * 50
+            next_level_xp = (level ** 3) * 100  # Steeper XP requirement for leveling up
             if xp >= next_level_xp:
                 new_level = level + 1
                 new_breed = breeds[new_level - 1] if new_level <= len(breeds) else breeds[-1]
@@ -399,7 +415,17 @@ class Bot(commands.Bot):
             "played fetch with a neighbor",
             "explored a hidden corner of the house",
             "watched squirrels from the window",
-            "had a little snack"
+            "had a little snack",
+            "dreamed about chasing rabbits",
+            "rolled around in the grass",
+            "sniffed every inch of the backyard",
+            "made friends with a curious cat",
+            "found a cozy spot on the couch for a nap",
+            "practiced its puppy-dog eyes in the mirror",
+            "wagged its tail at everyone who passed by",
+            "snuggled with its favorite blanket",
+            "chewed on a delicious bone",
+            "played hide-and-seek with its toys"
         ]
         
         self.db_cursor.execute("SELECT last_interaction FROM users WHERE username=?", (user,))
@@ -408,11 +434,11 @@ class Bot(commands.Bot):
             last_interaction = last_interaction[0]
             if isinstance(last_interaction, str):
                 last_interaction = datetime.strptime(last_interaction, '%Y-%m-%d %H:%M:%S.%f')
-            if datetime.now() - last_interaction > timedelta(hours=24):
+            if datetime.now().date() != last_interaction.date():
                 daily_streak = self.update_daily_streak(user)
-                bones_reward = min(daily_streak, 30)
-                self.db_cursor.execute("UPDATE users SET last_interaction = ?, bones = bones + ? WHERE username=?", 
-                                       (datetime.now(), bones_reward, user))
+                bones_reward = min(daily_streak * 5, 50)
+                self.db_cursor.execute("UPDATE users SET last_interaction = ?, last_login = ?, bones = bones + ? WHERE username=?",
+                                       (datetime.now(), datetime.now(), bones_reward, user))
                 self.db_conn.commit()
                 await self.retry_send_message(f"{user}, you received your daily bonus of {bones_reward} bones! Daily streak: {daily_streak} days.")
             if datetime.now() - last_interaction > timedelta(hours=12):
@@ -429,11 +455,16 @@ class Bot(commands.Bot):
 
     def update_daily_streak(self, user):
         # Function to update the daily login streak for the user
-        self.db_cursor.execute("SELECT daily_streak FROM users WHERE username=?", (user,))
-        daily_streak = self.db_cursor.fetchone()[0]
-        daily_streak += 1
-        self.db_cursor.execute("UPDATE users SET daily_streak = ? WHERE username=?", (daily_streak, user))
-        self.db_conn.commit()
+        self.db_cursor.execute("SELECT daily_streak, last_login FROM users WHERE username=?", (user,))
+        result = self.db_cursor.fetchone()
+        daily_streak = result[0]
+        last_login = result[1]
+        if isinstance(last_login, str):
+            last_login = datetime.strptime(last_login, '%Y-%m-%d %H:%M:%S.%f')
+        if datetime.now().date() != last_login.date():
+            daily_streak += 1
+            self.db_cursor.execute("UPDATE users SET daily_streak = ? WHERE username=?", (daily_streak, user))
+            self.db_conn.commit()
         return daily_streak
 
     @commands.command(name='trick')
@@ -485,11 +516,13 @@ class Bot(commands.Bot):
 
         dog_id = dog[0]
         all_tricks = [
-            ("Roll over", 1, 5), ("Play dead", 2, 10), ("Sit", 1, 5), ("Fetch", 2, 10), 
-            ("Speak", 3, 15), ("Shake", 2, 10), ("High five", 2, 10), ("Spin", 3, 15), 
+            ("Roll over", 1, 5), ("Play dead", 2, 10), ("Sit", 1, 5), ("Fetch", 2, 10),
+            ("Speak", 3, 15), ("Shake", 2, 10), ("High five", 2, 10), ("Spin", 3, 15),
             ("Jump", 3, 15), ("Stay", 1, 5), ("Beg", 4, 20), ("Wave", 4, 20),
             ("Backflip", 5, 25), ("Dance", 5, 25), ("Heel", 2, 10), ("Balance treat", 3, 15),
-            ("Weave", 4, 20), ("Roll over", 1, 5), ("Fetch", 2, 10)
+            ("Weave", 4, 20), ("Kiss", 2, 10), ("Crawl", 3, 15), ("Hug", 4, 20),
+            ("Bow", 2, 10), ("Catch", 3, 15), ("Salute", 4, 20), ("Paw", 2, 10),
+            ("Moonwalk", 5, 25), ("Skateboard", 5, 25), ("Sing", 4, 20), ("Yodel", 5, 25)
         ]
 
         self.db_cursor.execute("SELECT trick_name FROM tricks WHERE dog_id=?", (dog_id,))
@@ -530,9 +563,20 @@ class Bot(commands.Bot):
         if ctx.author.is_mod:
             user_to_ignore = ctx.message.content.split(' ')[1]
             self.db_cursor.execute("DELETE FROM dogs WHERE user=?", (user_to_ignore,))
+            self.db_cursor.execute("DELETE FROM users WHERE username=?", (user_to_ignore,))
             self.db_cursor.execute("INSERT INTO blacklist (username) VALUES (?)", (user_to_ignore,))
             self.db_conn.commit()
             await self.retry_send_message(f"{user_to_ignore} has been removed from the dog database and blacklisted.")
+        else:
+            await self.retry_send_message(f"{ctx.author.name}, you do not have permission to use this command.")
+
+    @commands.command(name='yesdog')
+    async def yesdog(self, ctx):
+        if ctx.author.is_mod:
+            user_to_unblacklist = ctx.message.content.split(' ')[1]
+            self.db_cursor.execute("DELETE FROM blacklist WHERE username=?", (user_to_unblacklist,))
+            self.db_conn.commit()
+            await self.retry_send_message(f"{user_to_unblacklist} has been removed from the blacklist.")
         else:
             await self.retry_send_message(f"{ctx.author.name}, you do not have permission to use this command.")
 
@@ -545,14 +589,16 @@ class Bot(commands.Bot):
                     if message not in self.sent_messages:
                         await channel.send(message)
                         self.sent_messages.add(message)
-                    await asyncio.sleep(delay + 1)
-                    if message not in self.sent_messages:
                         break
                 except Exception as e:
                     if attempt < retries - 1:
                         await asyncio.sleep(delay)
                     else:
                         print(f"Failed to send message: {message} after {retries} attempts.")
+
+    def cleanup_sent_messages(self):
+        one_hour_ago = datetime.now() - timedelta(hours=1)
+        self.sent_messages = {msg for msg in self.sent_messages if msg.timestamp >= one_hour_ago}
 
 bot = Bot()
 bot.run()
